@@ -3,9 +3,9 @@ clc;clear;
 lambda_i = 0.35;% inner radius
 lambda_o = 0.55;% outer radius
 delta = 4; % focal radius, cm
-Nphi = 200;
+Nphi = 100;
 phi = linspace(0,360,Nphi)/180*pi;
-Nl = 100;
+Nl = 50;
 lambda = linspace(lambda_i,lambda_o,Nl);
 Ni = 100;
 ita = linspace(0,120,Ni)/180*pi;
@@ -17,7 +17,18 @@ z = delta*cosh(LAMBDA).*cos(ITA);
 % K = boundary(x(:),y(:),z(:),0.9);
 % trisurf(K,x(:),y(:),z(:),'Facecolor','red','Facealpha',0.1,'Edgecolor','none');axis image;
 % xlabel('x (cm)');ylabel('y (cm)');zlabel('z (cm)');
-%%
+% inner layer
+[PHI_i,LAMBDA_i,ITA_i] = ndgrid(phi,lambda_i,ita);
+xi = delta*sinh(LAMBDA_i).*sin(ITA_i).*cos(PHI_i);
+yi = delta*sinh(LAMBDA_i).*sin(ITA_i).*sin(PHI_i);
+zi = delta*cosh(LAMBDA_i).*cos(ITA_i);
+% outer layer
+[PHI_o,LAMBDA_o,ITA_o] = ndgrid(phi,lambda_o,ita);
+xo = delta*sinh(LAMBDA_o).*sin(ITA_o).*cos(PHI_o);
+yo = delta*sinh(LAMBDA_o).*sin(ITA_o).*sin(PHI_o);
+zo = delta*cosh(LAMBDA_o).*cos(ITA_o);
+
+%% check lambda_INV to get mask 
 r1_INV = sqrt(x.^2+y.^2+(z+delta).^2);
 r2_INV = sqrt(x.^2+y.^2+(z-delta).^2);
 lambda_INV = acosh((r1_INV+r2_INV)/(2*delta));
@@ -50,18 +61,19 @@ a = mean(cosh(lambda)./sinh(lambda)); % correcitonal parameter
 Vw = pi*delta^3/4*(3*(cosh(lambda_o)-cosh(lambda_i))+4*((cosh(lambda_o))^3-(cosh(lambda_i))^3));
 fpath = 'C:\Users\Jyahway\Git-code\Data\';
 kpath = [fpath,'ks_csv'];
-Ks = convert13ks(kpath);
+N = 60;
+Ks = convert13ks(kpath,N);
 mxc = x(mask>0);
 px = mxc(:);
 myc = y(mask>0);
 py = myc(:);
 mzc = z(mask>0);
 pz = mzc(:);
-new_x = cell(60,1);
-new_y = cell(60,1);
-new_z = cell(60,1);
+new_x = cell(N,1);
+new_y = cell(N,1);
+new_z = cell(N,1);
 new_mu = mu(mask>0);
-parfor k = 1:60
+parfor k = 1:N
     [new_x{k},new_y{k},new_z{k}] = transK(a,Ks(:,k),px,py,pz,Vw);
 end
 xmin = min(cell2mat(new_x));
@@ -72,11 +84,14 @@ zmin = min(cell2mat(new_z));
 zmax = max(cell2mat(new_z));
 
 %% Write VTK to Paraview
-[xq,yq,zq] = ndgrid(xmin:dr:xmax,ymin:dr:ymax,zmin:dr:zmax);
-slice = cell(60,1);
-parfor k = 1:60
-    F = scatteredInterpolant(new_x{k},new_y{k},new_z{k},new_mu,'natural','none');
-    slice{k} = F(xq,yq,zq);
-    fname = sprintf('%s%sslice_3d%02.0f.vtk',fpath,filesep,k);
-    Mat2VTK(fname,slice{k},'binary');
+for k = 1:N
+    scatter3(new_x{k},new_y{k},new_z{k},2,new_mu,'filled');
+    axis image;
+    set(gca,'Zdir','reverse');
+    xlim([xmin xmax]);
+    ylim([ymin ymax]);
+    zlim([zmin zmax]);
+    pause(0.1);
+    filename = sprintf('%s%sslice_3d%02.0f.vtk',fpath,filesep,k);
+%     vtkwrite(filename,'unstructured_grid',new_x{k},new_y{k},new_z{k},'scalars','new mu',new_mu);
 end

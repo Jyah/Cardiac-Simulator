@@ -1,6 +1,5 @@
-function K = convert13ks(fpath)
+function K = convert13ks(fpath,N)
 flist = dir([fpath,filesep,'*.csv']);
-N = 60;
 frame = 1:N;
 K = zeros(13,N);
 for k = 1:length(flist)
