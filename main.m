@@ -1,4 +1,4 @@
-clc;clear;close all;
+clc;clear;
 %% Model Shape
 lambda_i = 0.35;% inner radius
 lambda_o = 0.55;% outer radius
@@ -13,10 +13,12 @@ ita = linspace(0,120,Ni)/180*pi;
 x = delta*sinh(LAMBDA).*sin(ITA).*cos(PHI);
 y = delta*sinh(LAMBDA).*sin(ITA).*sin(PHI);
 z = delta*cosh(LAMBDA).*cos(ITA);
-% figure;scatter3(x(:),y(:),z(:),'.k');axis image;
+figure;scatter3(x(:),y(:),z(:),'.k');axis image;
 % K = boundary(x(:),y(:),z(:),0.9);
 % trisurf(K,x(:),y(:),z(:),'Facecolor','red','Facealpha',0.1,'Edgecolor','none');axis image;
 % xlabel('x (cm)');ylabel('y (cm)');zlabel('z (cm)');
+
+%% create a 2D slice in original iamge and add mask
 dr = 0.1;
 [rx,ry,rz] = ndgrid(-2.5:dr:2.5,-2.5:dr:2.5,-2.5:dr:4.5);
 r1_INV = sqrt(rx.^2+ry.^2+(rz+delta).^2);
@@ -75,12 +77,13 @@ zmin = min(cell2mat(new_z));
 zmax = max(cell2mat(new_z));
 
 %% Write VTK to Paraview
-[xq,yq,zq] = ndgrid(xmin:dr:xmax,ymin:dr:ymax,2);
+[xq,yq,zq] = ndgrid(xmin:dr:xmax,ymin:dr:ymax,zmin:dr:zmax);
+slice = cell(60,1);
 parfor k = 1:60
     F = scatteredInterpolant(new_x{k},new_y{k},new_z{k},new_mu,'natural','none');
     slice{k} = F(xq,yq,zq);
-%     fname = sprintf('%s%sslice%02.0f.vtk',fpath,filesep,k);
-%     Mat2VTK(fname,slice{k},'binary');
+    fname = sprintf('%s%sslice_3d%02.0f.vtk',fpath,filesep,k);
+    Mat2VTK(fname,slice{k},'binary');
 end
 %% function p = invTran(r,k,a)
 lyr = 1;
@@ -129,7 +132,7 @@ vz = zq(sa_mask>0);
 dx = reshape(DX(:,n),size(sa_mask));
 dy = reshape(DY(:,n),size(sa_mask));
 dz = reshape(DZ(:,n),size(sa_mask));
-quiver3(vx(:),vy(:),vz(:),dx(sa_mask>0),dy(sa_mask>0),dz(sa_mask>0));
+quiver3(vx(:),vy(:),vz(:),dx(sa_mask>0),dy(sa_mask>0),dz(sa_mask>0),'Color','black');
 
 
 
