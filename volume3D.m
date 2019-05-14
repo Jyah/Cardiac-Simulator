@@ -59,7 +59,7 @@ mask(lambda_INV>=lambda_i & lambda_INV<=lambda_o & ita_INV>=0 & ita_INV<=(120/18
 a = mean(cosh(lambda)./sinh(lambda)); % correcitonal parameter
 % the wall volume of the model LV
 Vw = pi*delta^3/4*(3*(cosh(lambda_o)-cosh(lambda_i))+4*((cosh(lambda_o))^3-(cosh(lambda_i))^3));
-fpath = 'C:\Users\Jyahway\Git-code\Data\';
+fpath = 'Data\';
 kpath = [fpath,'ks_csv'];
 N = 60;
 Ks = convert13ks(kpath,N);
@@ -92,6 +92,9 @@ for k = 1:N
     ylim([ymin ymax]);
     zlim([zmin zmax]);
     pause(0.1);
-    filename = sprintf('%s%sslice_3d%02.0f.vtk',fpath,filesep,k);
-%     vtkwrite(filename,'unstructured_grid',new_x{k},new_y{k},new_z{k},'scalars','new mu',new_mu);
+    filename = sprintf('%s%sslice_3d%02.0f',fpath,filesep,k);
+    p = [new_x{k},new_y{k},new_z{k}];
+    t = delaunayn(unique(p));
+    u = new_mu;
+    writeVTK(filename,t,p,u);
 end
